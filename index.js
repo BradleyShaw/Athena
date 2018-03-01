@@ -70,7 +70,7 @@ class Bot extends Core {
     * Socket connection related stuff.
     * @function
     */
-    connect() {
+    async connect() {
         this.socket.once('connect', () => {
             log.info('Connected');
 

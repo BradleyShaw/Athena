@@ -21,11 +21,11 @@ class ConnectionWrapper {
     * @param {object} event - The event object created when parsing the incoming messages.
     * @param {string} message - The message you wish to reply with.
     */
-    reply(event, message) {
+    async reply(event, message) {
         if (event.target === this.bot.config.nickname) {
-            this.privmsg(event.source.nick, message);
+            await this.privmsg(event.source.nick, message);
         } else {
-            this.privmsg(event.target, message);
+            await this.privmsg(event.target, message);
         }
     }
 
@@ -34,7 +34,7 @@ class ConnectionWrapper {
     * @param {string} target - The user or channel you wish to send a PRIVMSG to.
     * @param {string} message - The message you wish to send.
     */
-    privmsg(target, message) {
+    async privmsg(target, message) {
         const config = this.bot.config;
         const channel = target.startsWith('#') ? target : this.state.channel.keys()[0];
         const db = this.bot.state.channels[channel].users[config.nickname];
@@ -44,15 +44,15 @@ class ConnectionWrapper {
         let msg = Buffer.from(message);
 
         for (let i of range(0, msg.byteLength, MSGLEN)) {
-            this.bot.send(`PRIVMSG ${target} :${msg.slice(i, i + MSGLEN).toString()}`);
+            await this.bot.send(`PRIVMSG ${target} :${msg.slice(i, i + MSGLEN).toString()}`);
         }
     }
 
     /**
     * @func
     */
-    ping() {
-        this.bot.send(`PING :${(new Date()).getTime()}`);
+    async ping() {
+        await this.bot.send(`PING :${(new Date()).getTime()}`);
     }
 
     /**
@@ -60,8 +60,8 @@ class ConnectionWrapper {
     * @func
     * @param {string} chan - The channel you wish to leave.
     */
-    part(chan) {
-        this.bot.send(`PART ${chan}`);
+    async part(chan) {
+        await this.bot.send(`PART ${chan}`);
     }
 
     /**
@@ -69,8 +69,8 @@ class ConnectionWrapper {
     * @func
     * @param {string} nick - The nick you wish to change to.
     */
-    nick(nick) {
-        this.bot.send(`NICK ${nick}`);
+    async nick(nick) {
+        await this.bot.send(`NICK ${nick}`);
     }
 
     /**
@@ -79,8 +79,8 @@ class ConnectionWrapper {
     * @param {string} chan - Channel you wish to join.
     * @param {string} [key] - Channel key.
     */
-    join(chan, key) {
-        this.bot.send(`JOIN ${chan} ${key || ''}`);
+    async join(chan, key) {
+        await this.bot.send(`JOIN ${chan} ${key || ''}`);
     }
 
     /**
@@ -89,8 +89,8 @@ class ConnectionWrapper {
     * @param {string} chan - Channel where you wish to invite user to.
     * @param {string} user - User whom you would like to invite to specified channel.
     */
-    invite(chan, user) {
-        this.bot.send(`INVITE ${user} ${chan}`);
+    async invite(chan, user) {
+        await this.bot.send(`INVITE ${user} ${chan}`);
     }
 
     /**
@@ -99,8 +99,8 @@ class ConnectionWrapper {
     * @param {string} channel - The channel you wish to send the ACTION to.
     * @param {string} message - The message you wish to send.
     */
-    action(channel, message) {
-        this.bot.send(`PRIVMSG ${channel} :\x01ACTION ${message}\x01`);
+    async action(channel, message) {
+        await this.bot.send(`PRIVMSG ${channel} :\x01ACTION ${message}\x01`);
     }
 
     /**
@@ -110,9 +110,9 @@ class ConnectionWrapper {
     * @param {string} user - User whom you would like to kick from specified channel.
     * @param {string} message - Message with which you'd like to kick the specified user with
     */
-    kick(channel, user, message) {
+    async kick(channel, user, message) {
         user = user.replace(' ', '').replace(':', '');
-        this.bot.send(`KICK ${channel} ${user} :${message}`);
+        await this.bot.send(`KICK ${channel} ${user} :${message}`);
     }
 
     /**
@@ -122,8 +122,8 @@ class ConnectionWrapper {
     * @param {string} user - User whom you would like to remove from specified channel.
     * @param {string} message - Message with which you'd like to remove the specified user with
     */
-    remove(channel, user, message) {
-        this.bot.send(`REMOVE ${channel} ${user} :${message}`);
+    async remove(channel, user, message) {
+        await this.bot.send(`REMOVE ${channel} ${user} :${message}`);
     }
 
     /**
@@ -132,8 +132,8 @@ class ConnectionWrapper {
     * @param {string} channel - Channel where you wish to give user from.
     * @param {string} nick - User whom you would like to give operator status to in specified channel.
     */
-    op(channel, nick) {
-        this.mode(channel, nick, '+o');
+    async op(channel, nick) {
+        await this.mode(channel, nick, '+o');
     }
 
     /**
@@ -142,8 +142,8 @@ class ConnectionWrapper {
     * @param {string} channel - Channel where you wish to give user from.
     * @param {string} nick - User whom you would like to remove operator status from specified channel.
     */
-    deop(channel, nick) {
-        this.mode(channel, nick, '-o');
+    async deop(channel, nick) {
+        await this.mode(channel, nick, '-o');
     }
 
     /**
@@ -152,8 +152,8 @@ class ConnectionWrapper {
     * @param {string} channel - Channel where you wish to ban the user from.
     * @param {string} nick - User whom you would like to ban from specified channel.
     */
-    ban(channel, nick) {
-        this.mode(channel, nick, '+b');
+    async ban(channel, nick) {
+        await this.mode(channel, nick, '+b');
     }
 
     /**
@@ -162,40 +162,40 @@ class ConnectionWrapper {
     * @param {string} channel - Channel where you wish to unban the user from.
     * @param {string} nick - User whom you would like to unban from specified channel.
     */
-    unban(channel, nick) {
-        this.mode(channel, nick, '-b');
+    async unban(channel, nick) {
+        await this.mode(channel, nick, '-b');
     }
 
     /**
     * @param {string} channel
     * @param {string} nick
     */
-    quiet(channel, nick) {
-        this.mode(channel, nick, '+q');
+    async quiet(channel, nick) {
+        await this.mode(channel, nick, '+q');
     }
 
     /**
     * @param {string} channel
     * @param {string} nick
     */
-    unquiet(channel, nick) {
-        this.mode(channel, nick, '-q');
+    async unquiet(channel, nick) {
+        await this.mode(channel, nick, '-q');
     }
 
     /**
     * @param {string} channel
     * @param {string} nick
     */
-    unvoice(channel, nick) {
-        this.mode(channel, nick, '-v');
+    async unvoice(channel, nick) {
+        await this.mode(channel, nick, '-v');
     }
 
     /**
     * @param {string} channel
     * @param {string} nick
     */
-    voice(channel, nick) {
-        this.mode(channel, nick, '+v');
+    async voice(channel, nick) {
+        await this.mode(channel, nick, '+v');
     }
 
     /**
@@ -203,31 +203,31 @@ class ConnectionWrapper {
     * @param {string} nick
     * @param {string} mode
     */
-    mode(channel, nick, mode) {
-        this.bot.send(`MODE ${channel} ${mode} ${nick}`);
+    async mode(channel, nick, mode) {
+        await this.bot.send(`MODE ${channel} ${mode} ${nick}`);
     }
 
     /**
     * @param {string} user
     * @param {string} message
     */
-    notice(user, message) {
-        this.bot.send(`NOTICE ${user} :${message}`);
+    async notice(user, message) {
+        await this.bot.send(`NOTICE ${user} :${message}`);
     }
 
     /**
     * @param {string} message
     */
-    quit(message) {
-        this.bot.send(`QUIT :${message}`);
+    async quit(message) {
+        await this.bot.send(`QUIT :${message}`);
     }
 
     /**
     * @param {string} user
     * @param {string} message
     */
-    ctcp(user, message) {
-        this.privmsg(user, `\x01${message}\x01\x01`);
+    async ctcp(user, message) {
+        await this.privmsg(user, `\x01${message}\x01\x01`);
     }
 
 }

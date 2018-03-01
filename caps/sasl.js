@@ -20,14 +20,14 @@ class Sasl {
     * @param {object} bot
     * @param {array} [args]
     */
-    run(bot, args) {
+    async run(bot, args) {
         const mechanisms = args || ['EXTERNAL', 'PLAIN'];
 
         this.bot = bot;
 
         if (mechanisms.indexOf(this.method.toUpperCase()) > -1) {
             if (['plain', 'external'].indexOf(this.method) > -1) {
-                bot.send(`AUTHENTICATE ${this.method.toUpperCase()}`);
+                await bot.send(`AUTHENTICATE ${this.method.toUpperCase()}`);
             } else {
                 throw new Error('Not implemented yet');
             }
@@ -40,7 +40,7 @@ class Sasl {
     * @func
     * @param {object} event
     */
-    on_authenticate(event) {
+    async on_authenticate(event) {
         let password;
 
         if (event.arguments[0] === '+') {
@@ -50,7 +50,7 @@ class Sasl {
                 password = '+';
             }
 
-            this.bot.send(`AUTHENTICATE ${password}`);
+            await this.bot.send(`AUTHENTICATE ${password}`);
         }
     }
 
@@ -58,7 +58,7 @@ class Sasl {
     * @func
     * @param {object} event
     */
-    on_saslfailed(event) {
+    async on_saslfailed(event) {
         this.retries += 1;
 
         if (this.method === 'external') {
@@ -66,15 +66,15 @@ class Sasl {
                 this.retries = 1;
                 this.method = 'plain';
 
-                this.bot.send('AUTHENTICATE PLAIN');
+                await this.bot.send('AUTHENTICATE PLAIN');
             } else {
-                this.bot.send('AUTHENTICATE EXTERNAL');
+                await this.bot.send('AUTHENTICATE EXTERNAL');
             }
         } else if (this.method === 'plain') {
             if (this.retries !== 2) {
-                this.bot.send('AUTHENTICATE PLAIN');
+                await this.bot.send('AUTHENTICATE PLAIN');
             } else {
-                this.bot.send('AUTHENTICATE *');
+                await this.bot.send('AUTHENTICATE *');
                 throw new Error('SASL authentication failed!');
             }
         }
@@ -84,8 +84,8 @@ class Sasl {
     * @func
     * @param {object} event
     */
-    on_saslsuccess(event) {
-        this.bot.send('CAP END');
+    async on_saslsuccess(event) {
+        await this.bot.send('CAP END');
     }
 
 }

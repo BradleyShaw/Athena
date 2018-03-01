@@ -169,12 +169,12 @@ class Core {
             }
         });
 
-        this.on_privmsg = this.events.on('PRIVMSG', (irc, event) => {
-            let args = event.arguments.join(' ').split(' '); // Split arguments by spaces
+        this.on_privmsg = this.events.on('PRIVMSG', async (irc, event) => {
+            const args = event.arguments.join(' ').split(' '); // Split arguments by spaces
 
             if (args[0].startsWith('*')) {
                 args[0] = args[0].slice(1);
-                this.plugins.call_command(event, irc, args);
+                await this.plugins.call_command(event, irc, args);
             }
             this._update_seen_db(event, irc, event.source.nick, args.join(' '));
         });
@@ -311,9 +311,9 @@ class Core {
     * @func
     * @param {string} message - The message you want to send
     */
-    send(message) {
-        this.socket.write(`${message}\r\n`);
-        log.debug('[SENT] %s', strip_formatting(message));
+    async send(message) {
+        await this.socket.write(`${message}\r\n`);
+        await log.debug('[SENT] %s', strip_formatting(message));
     }
 
 }
