@@ -312,7 +312,9 @@ class Core {
     * @param {string} message - The message you want to send
     */
     async send(message) {
-        await this.socket.write(`${message}\r\n`);
+        const { promisify } = require('util');
+
+        await promisify(this.socket.write(`${message}\r\n`));
         await log.debug('[SENT] %s', strip_formatting(message));
     }
 

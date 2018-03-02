@@ -39,17 +39,17 @@ class Plugins {
     * @param {ConnectionWrapper} irc
     * @param {array} args
     */
-    call_command(event, irc, args) {
+    async call_command(event, irc, args) {
         if (this[args[0]] !== undefined) {
             try {
                 let cmd = this[args[0]];
 
-                cmd(this.bot, event, irc, args.slice(1));
+                await cmd(this.bot, event, irc, args.slice(1));
             } catch (e) {
                 log.error(e.stack);
             }
         } else {
-            irc.reply(event, `Invalid Command: ${args[0]}`);
+            await irc.reply(event, `Invalid Command: ${args[0]}`);
         }
     }
 }
