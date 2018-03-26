@@ -48,7 +48,7 @@ class Core {
         });
 
         this.on_welcome = this.events.on('001', async (irc, event) => {
-            Object.keys(this.config.channels).forEach(channel => {
+            Object.keys(this.config.channels).forEach(async channel => {
                 await irc.join(channel, this.config.channels[channel].key);
             });
         });
@@ -153,7 +153,9 @@ class Core {
 
         this.on_cap = this.events.on('CAP', async (irc, event) => await this.caps.handler(event));
 
-        this.on_authenticate = this.events.on('AUTHENTICATE', async (irc, event) => await this.sasl.on_authenticate(event));
+        this.on_authenticate = this.events.on('AUTHENTICATE', async (irc, event) => {
+            await this.sasl.on_authenticate(event);
+        });
 
         this.on_saslfailed = this.events.on('904', async (irc, event) => await this.sasl.on_saslfailed(event));
 
