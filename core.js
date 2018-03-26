@@ -31,15 +31,15 @@ class Core {
         this.ISUPPORT = this.state.server.ISUPPORT = {};
         this.channels = this.state.channels;
 
-        this.on_error = this.events.on('ERROR', (irc, event) => {
+        this.on_error = this.events.on('ERROR', async (irc, event) => {
             if (event.arguments.join(' ').indexOf('Closing link') <= -1)
-                irc.privmsg('##Athena', 'An error occured, check the console. !att-Athena-admins');
+                await irc.privmsg('##Athena', 'An error occured, check the console. !att-Athena-admins');
             log.error(event.arguments.join(' '));
         });
 
-        this.on_ping = this.events.on('PING', irc => {
+        this.on_ping = this.events.on('PING', async irc => {
             // Respond to ping event
-            this.send('PONG');
+            await this.send('PONG');
         });
 
         this.on_nick_in_use = this.events.on('433', (irc, event) => {
@@ -47,13 +47,13 @@ class Core {
             irc.nick(this.nickname);
         });
 
-        this.on_welcome = this.events.on('001', (irc, event) => {
+        this.on_welcome = this.events.on('001', async (irc, event) => {
             Object.keys(this.config.channels).forEach(channel => {
-                irc.join(channel, this.config.channels[channel].key);
+                await irc.join(channel, this.config.channels[channel].key);
             });
         });
 
-        this.on_join = this.events.on('JOIN', (irc, event) => {
+        this.on_join = this.events.on('JOIN', async (irc, event) => {
             let channel = event.target;
             let args = event.arguments;
 
@@ -69,9 +69,9 @@ class Core {
                     });
                 }
 
-                this.send(`WHO ${event.target} nuhs%nhuac`);
-                this.send(`NAMES ${event.target}`);
-                irc.mode(event.target, '', ''); // Get modes for the DB
+                await this.send(`WHO ${event.target} nuhs%nhuac`);
+                await this.send(`NAMES ${event.target}`);
+                await irc.mode(event.target, '', ''); // Get modes for the DB
             } else {
                 // Extended join methods
                 if (args.length > 0) {
@@ -79,14 +79,14 @@ class Core {
                     let hostmask = event.source.userhost;
                     let account = args[0] !== '*' ? args[0] : null;
 
-                    this.state.channels.add_entry(channel, nick, hostmask, account);
+                    await this.state.channels.add_entry(channel, nick, hostmask, account);
                 }
 
-                this.send(`WHO ${event.source.nick} nuhs%nhuac`);
+                await this.send(`WHO ${event.source.nick} nuhs%nhuac`);
             }
         });
 
-        this.on_name = this.events.on('353', (irc, event) => {
+        this.on_name = this.events.on('353', async (irc, event) => {
             const channel = event.arguments[1];
             const users = event.arguments[2].split(' ');
 
@@ -101,7 +101,7 @@ class Core {
             }
         });
 
-        this.on_whox = this.events.on('354', (irc, event) => {
+        this.on_whox = this.events.on('354', async (irc, event) => {
             let nick = event.arguments[3];
 
             if (nick !== 'ChanServ') {
@@ -115,11 +115,11 @@ class Core {
             }
         });
 
-        this.on_channelmodeis = this.events.on('324', (irc, event) => {
+        this.on_channelmodeis = this.events.on('324', async (irc, event) => {
             this.state.channels[event.arguments[0]].modes.push(...event.arguments[1].slice(1).split(''));
         });
 
-        this._update_user_modes = (event, mode) => {
+        this._update_user_modes = async (event, mode) => {
             let [channel, user] = arguments.slice(0, 2);
             // let [channel, user, setby, timestamp] = event.arguments;
 
@@ -131,17 +131,17 @@ class Core {
             }
         };
 
-        this.on_exceptlist = this.events.on('348', (irc, event) => this._update_user_modes(event, 'e'));
+        this.on_exceptlist = this.events.on('348', async (irc, event) => await this._update_user_modes(event, 'e'));
 
-        this.on_banlist = this.events.on('367', (irc, event) => this._update_user_modes(event, 'b'));
+        this.on_banlist = this.events.on('367', async (irc, event) => await this._update_user_modes(event, 'b'));
 
-        this.on_quietlist = this.events.on('728', (irc, event) => this._update_user_modes(event, 'q'));
+        this.on_quietlist = this.events.on('728', async (irc, event) => await this._update_user_modes(event, 'q'));
 
-        this.on_account = this.events.on('ACCOUNT', (irc, event) => {
+        this.on_account = this.events.on('ACCOUNT', async (irc, event) => {
             this.userdb.change_attr(event.source.nick, 'account', event.target);
         });
 
-        this.on_chghost = this.events.on('CHGHOST', (irc, event) => {
+        this.on_chghost = this.events.on('CHGHOST', async (irc, event) => {
             let args = event.arguments;
 
             if (args.length) {
@@ -151,13 +151,13 @@ class Core {
                 this.userdb.change_attr(event.source.nick, 'host', event.target);
         });
 
-        this.on_cap = this.events.on('CAP', (irc, event) => this.caps.handler(event));
+        this.on_cap = this.events.on('CAP', async (irc, event) => await this.caps.handler(event));
 
-        this.on_authenticate = this.events.on('AUTHENTICATE', (irc, event) => this.sasl.on_authenticate(event));
+        this.on_authenticate = this.events.on('AUTHENTICATE', async (irc, event) => await this.sasl.on_authenticate(event));
 
-        this.on_saslfailed = this.events.on('904', (irc, event) => this.sasl.on_saslfailed(event));
+        this.on_saslfailed = this.events.on('904', async (irc, event) => await this.sasl.on_saslfailed(event));
 
-        this.on_saslsuccess = this.events.on('903', (irc, event) => this.sasl.on_saslsuccess(event));
+        this.on_saslsuccess = this.events.on('903', async (irc, event) => await this.sasl.on_saslsuccess(event));
 
         this.on_alreadyregistered = this.events.on('462', (irc, event) => { /* eslint-disable max-len */
             log.error('Either you aren\'t registered and are trying to use SASL or you\'re trying to re-do the USER command');
@@ -197,7 +197,7 @@ class Core {
             return timestamp;
         };
 
-        this._update_seen_db = (event, irc, nick, str_args) => {
+        this._update_seen_db = async (event, irc, nick, str_args) => {
             let timestamp = this._get_time(event.tags);
             let udb = this.channels[event.target].users[nick];
 
@@ -209,11 +209,11 @@ class Core {
                 udb.seen.sort((a, b)=> a.time > b.time);
                 udb.seen = udb.seen.slice(-5);
             } else {
-                this.send(`WHO ${event.target} nuhs%nhuac`);
+                await this.send(`WHO ${event.target} nuhs%nhuac`);
             }
         };
 
-        this.on_ctcp = this.events.on('CTCP', (irc, event) => {
+        this.on_ctcp = this.events.on('CTCP', async (irc, event) => {
             if (hasattr(this, 'ctcp')) {
                 let ctcp_message = ' '.join(event.arguments).toUpperCase();
 
@@ -226,12 +226,12 @@ class Core {
                         result = this.ctcp[ctcp_message];
                     }
 
-                    irc.notice(event.source.nick, `${ctcp_message} ${result}`);
+                    await irc.notice(event.source.nick, `${ctcp_message} ${result}`);
                 }
             }
         });
 
-        this.on_featurelist = this.events.on('005', (irc, event) => {
+        this.on_featurelist = this.events.on('005', async (irc, event) => {
             for (let param of event.arguments.slice(0, -1)) {
                 let split = partition(param, '=');
                 let name = split[0];
